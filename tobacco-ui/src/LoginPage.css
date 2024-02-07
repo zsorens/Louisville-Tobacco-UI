@@ -1,20 +1,22 @@
 body {
-    background-image: url('../Images/Louisville_background.png'); /* Replace '../path/to/your/image.jpg' with the path to your image */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-  }
+  background-image: url("../Images/Louisville_background.png"); /* Replace '../path/to/your/image.jpg' with the path to your image */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 
-  .card {
-    background-color: transparent;
-    border: none;
-  }
+/* .card {
+  background-color: transparent;
+  border: none;
+}
 
-  .card-title {
-    color: rgb(65, 72, 73);
-  }
+.card-title{
+    color: #444848;
+    font-size: 3rem;
+} */
 
-  .red-button {
+.red-button {
+    width: 150px; /* Set width to 150 pixels */
     background-color: #ff0000; /* Red background color */
     color: #fff; /* White text color */
     border: none; /* Remove border */
@@ -26,10 +28,12 @@ body {
   
   .red-button:hover {
     background-color: #cc0000; /* Darker red on hover */
+    color: #fff;
   }
   
   /* Black button */
   .black-button {
+    width: 150px; /* Set width to 150 pixels */
     background-color: #000; /* Black background color */
     color: #fff; /* White text color */
     border: none; /* Remove border */
@@ -41,5 +45,5 @@ body {
   
   .black-button:hover {
     background-color: #333; /* Darker black on hover */
+    color: #fff;
   }
-  

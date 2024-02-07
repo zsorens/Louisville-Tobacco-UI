@@ -1,0 +1,33 @@
+/* NavBar.css */
+
+.navbar {
+    background-color: white; /* White background */
+  }
+  
+  .navbar-brand {
+    color: #333; /* Dark gray text */
+    font-weight: bold; /* Bold font */
+  }
+  
+  .navbar-nav .nav-link {
+    color: #333; /* Dark gray text */
+    margin-left: 20px; /* Add margin between links */
+  }
+  
+  .navbar-nav .nav-link:hover {
+    color: #666; /* Darker gray text on hover */
+  }
+  
+  .navbar-nav {
+    display: flex; /* Make the navbar items horizontal */
+    align-items: center; /* Center items vertically */
+  }
+  
+  .navbar-nav .nav-item {
+    margin-right: 10px; /* Add margin between items */
+  }
+  
+  .navbar-nav .nav-link {
+    padding: 10px 15px; /* Add padding to make clickable area larger */
+  }
+  

@@ -5,6 +5,15 @@ body {
     background-repeat: no-repeat;
   }
 
+  .card {
+    background-color: transparent;
+    border: none;
+  }
+
+  .card-title {
+    color: rgb(65, 72, 73);
+  }
+
   .red-button {
     background-color: #ff0000; /* Red background color */
     color: #fff; /* White text color */

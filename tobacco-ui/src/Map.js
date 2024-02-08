@@ -10,6 +10,28 @@ import greenPin from './Images/GreenPin.webp';
 
 // // Modal.setAppElement('#root');
 
+const handleGeocode = async (address) => {
+    try {
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+        );
+        const data = await response.json();
+        if (data && data.length > 0) {
+            return {
+
+                lat: parseFloat(data[0].lat),
+                lon: parseFloat(data[0].lon)
+            }
+
+        } else {
+            console.error('No results found');
+            return null;
+        }
+    } catch (error) {
+        console.error('Error fetching geocode:', error);
+    }
+};
+
 const createCustomIcon = (color) => {
     let iconUrl;
     switch (color.toLowerCase()) {
@@ -36,49 +58,48 @@ const createCustomIcon = (color) => {
 
 function MapUpdater({ sidebarOpen }) {
     const map = useMap();
-  
+
     useEffect(() => {
-      // A slight delay to ensure the sidebar animation has finished
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 300);
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 300);
     }, [sidebarOpen, map]);
-  
+
     return null;
-  };
+}
 
 const Map = () => {
+    const [locations, setLocations] = useState([]); // Store geocoded locations
     const [selectedRetailer, setSelectedRetailer] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    // Example locations data with color property
-    const locations = [
-        { id: 1, name: "Retailer 1", details: "score of 0", position: [38.2527, -85.7585], color: 'red' },
-        { id: 2, name: "Retailer 2", details: "score of 1", position: [38.2530, -85.7550], color: 'yellow' },
-        // Add more locations here with color: 'green', 'yellow', or 'red'
-    ];
-
-    const mapRef = useRef(null);
-
-    // Call this function to fix the map display
-    const updateMapSize = () => {
-      if (mapRef.current) {
-        mapRef.current.leafletElement.invalidateSize();
-      }
-    };
-  
-    // Effect to update map size when sidebarOpen changes
     useEffect(() => {
-      updateMapSize();
-    }, [sidebarOpen]);
-  
-    
+        // Function to geocode all addresses
+        const geocodeLocations = async () => {
+            const addresses = [
+                { id: 1, name: "Retailer 1", details: "score of 0", address: "1841 Alfresco Pl, Louisville, KY, 40205", color: 'red' },
+                { id: 2, name: "Retailer 2", details: "score of 1", address: "1641 Norris Pl, Louisville, KY, 40205", color: 'green' },
+                // Add more locations with addresses here
+            ];
+
+            const geocodedLocations = await Promise.all(
+                addresses.map(async (location) => {
+                    const coords = await handleGeocode(location.address);
+                    return coords ? { ...location, position: [coords.lat, coords.lon] } : null;
+                })
+            );
+
+            setLocations(geocodedLocations.filter(loc => loc !== null)); // Filter out any nulls
+        };
+
+        geocodeLocations();
+    }, []);
+
     const handleMarkerClick = (retailer) => {
-        setSelectedRetailer(retailer); // Set the clicked retailer
-        setSidebarOpen(true); // Open the sidebar
+        setSelectedRetailer(retailer);
+        setSidebarOpen(true);
     };
 
-    // Close modal function
     return (
         <div className="container d-flex justify-content-center align-items-center vh-100">
             <MapContainer center={[38.2527, -85.7585]} zoom={13} scrollWheelZoom={true} style={{ height: "600px", width: "100%" }}>
@@ -110,5 +131,4 @@ const Map = () => {
         </div>
     );
 };
-
 export default Map;

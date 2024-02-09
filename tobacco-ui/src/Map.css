@@ -1,0 +1,19 @@
+.sidebar-container {
+    position: fixed;
+    top: 0;
+    right: -50%;
+    width: 50%;
+    height: 100%;
+    background: rgb(137, 219, 238);
+    z-index: 1000;
+    transition: right 0.5s ease;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+    display: flex;         /* Enables flexbox */
+    flex-direction: column; /* Stack children vertically */
+    justify-content: center; /* Center children vertically */
+    align-items: center; 
+}
+
+.sidebar-container.open {
+    right: 0;
+}

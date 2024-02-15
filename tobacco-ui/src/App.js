@@ -14,7 +14,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/home" element={<Map />} />
+          <Route path="/map" element={<Map />} />
           {/* Add more routes for other pages */}
         </Routes>
       </div>

@@ -2,9 +2,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import NavBar from './Navbar';
-import LoginPage from './LoginPage';
-import Map from './Map';
+import NavBar from './components/Navbar';
+import LoginPage from './Pages/LoginPage';
+import Map from './Pages/Map';
 
 function App() {
   return (

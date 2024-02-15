@@ -1,6 +1,6 @@
 // LoginPage.js
 import React from "react";
-import "./LoginPage.css"; // Import the CSS file
+import "../Styling/LoginPage.css"; // Import the CSS file
 
 const LoginPage = () => {
   return (

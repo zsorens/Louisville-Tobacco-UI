@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
-import "./Map.css"; // Your custom CSS
-import redPin from './Images/RedPin.webp';
-import yellowPin from './Images/YellowPin.webp';
-import greenPin from './Images/GreenPin.webp';
+import "../Styling/Map.css"; // Your custom CSS
+import redPin from '../Images/RedPin.webp';
+import yellowPin from '../Images/YellowPin.webp';
+import greenPin from '../Images/GreenPin.webp';
 // import Modal from 'react-modal';
 
 // // Modal.setAppElement('#root');

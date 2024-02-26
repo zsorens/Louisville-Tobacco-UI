@@ -1,14 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
-import "../Styling/Map.css"; // Your custom CSS
+import 'leaflet/dist/leaflet.css';
+import "../Styling/Map.css";
 import redPin from '../Images/RedPin.webp';
 import yellowPin from '../Images/YellowPin.webp';
 import greenPin from '../Images/GreenPin.webp';
-// import Modal from 'react-modal';
-
-// // Modal.setAppElement('#root');
 
 const handleGeocode = async (address) => {
     try {
@@ -18,11 +15,9 @@ const handleGeocode = async (address) => {
         const data = await response.json();
         if (data && data.length > 0) {
             return {
-
                 lat: parseFloat(data[0].lat),
                 lon: parseFloat(data[0].lon)
             }
-
         } else {
             console.error('No results found');
             return null;
@@ -45,7 +40,7 @@ const createCustomIcon = (color) => {
             iconUrl = greenPin;
             break;
         default:
-            iconUrl = redPin; // Default to red if color doesn't match
+            iconUrl = redPin;
     }
 
     return L.icon({
@@ -68,28 +63,26 @@ function MapUpdater({ sidebarOpen }) {
     return null;
 }
 
-const Map = () => {
-    const [locations, setLocations] = useState([]); // Store geocoded locations
+const mockAddresses = [
+    { id: 1, name: "Mock Retailer 1", details: "score of 0", address: "1841 Alfresco Pl, Louisville, KY, 40205", color: 'red' },
+    { id: 2, name: "Mock Retailer 2", details: "score of 1", address: "1641 Norris Pl, Louisville, KY, 40205", color: 'green' },
+    // Add more mock addresses here
+];
+
+const MapPage = () => {
+    const [locations, setLocations] = useState([]);
     const [selectedRetailer, setSelectedRetailer] = useState(null);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
-        // Function to geocode all addresses
         const geocodeLocations = async () => {
-            const addresses = [
-                { id: 1, name: "Retailer 1", details: "score of 0", address: "1841 Alfresco Pl, Louisville, KY, 40205", color: 'red' },
-                { id: 2, name: "Retailer 2", details: "score of 1", address: "1641 Norris Pl, Louisville, KY, 40205", color: 'green' },
-                // Add more locations with addresses here
-            ];
-
             const geocodedLocations = await Promise.all(
-                addresses.map(async (location) => {
+                mockAddresses.map(async (location) => {
                     const coords = await handleGeocode(location.address);
                     return coords ? { ...location, position: [coords.lat, coords.lon] } : null;
                 })
             );
 
-            setLocations(geocodedLocations.filter(loc => loc !== null)); // Filter out any nulls
+            setLocations(geocodedLocations.filter(loc => loc !== null));
         };
 
         geocodeLocations();
@@ -97,38 +90,58 @@ const Map = () => {
 
     const handleMarkerClick = (retailer) => {
         setSelectedRetailer(retailer);
-        setSidebarOpen(true);
     };
 
     return (
-        <div className="container d-flex justify-content-center align-items-center vh-100">
-            <MapContainer center={[38.2527, -85.7585]} zoom={13} scrollWheelZoom={true} style={{ height: "600px", width: "100%" }}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <div className="map-page-container">
+            <div className="map-sidebar-container d-flex flex-row">
+                <div className="map-container">
+                    <MapContainer center={[38.2527, -85.7585]} zoom={13} scrollWheelZoom={true} style={{ height: "80vh" }}>
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        {locations.map((location) => (
+                            <Marker
+                                key={location.id}
+                                position={location.position}
+                                icon={createCustomIcon(location.color)}
+                                eventHandlers={{
+                                    click: () => handleMarkerClick(location),
+                                }}
+                            >
+                                <Popup>{location.name}</Popup>
+                            </Marker>
+                        ))}
+                        <MapUpdater />
+                    </MapContainer>
+                </div>
+                <div className="sidebar-container">
+                    {selectedRetailer && (
+                        <div>
+                            <h2>{selectedRetailer.name}</h2>
+                            <p>{selectedRetailer.address}</p>
+                            <p>{selectedRetailer.details}</p>
+                            {/* Add more information here if needed */}
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="mock-addresses-container d-flex justify-content-center w-100">
+                <div>
+                <h2>Mock Addresses</h2>
                 {locations.map((location) => (
-                    <Marker
-                        key={location.id}
-                        position={location.position}
-                        icon={createCustomIcon(location.color)}
-                        eventHandlers={{
-                            click: () => handleMarkerClick(location),
-                        }}
-                    >
-                        <Popup>{location.name}</Popup>
-                    </Marker>
-                ))}
-                <MapUpdater sidebarOpen={sidebarOpen} />
-            </MapContainer>
-            <div className={`sidebar-container ${sidebarOpen ? 'open' : ''}`}>
-                {selectedRetailer && (
-                    <div>
-                        <h2>{selectedRetailer.name}</h2>
-                        <p>{selectedRetailer.details}</p>
-                        {/* Additional retailer details here */}
+                    <div key={location.id}>
+                        <p>{location.name}</p>
+                        <p>{location.address}</p>
+                        {/* Add more information here if needed */}
                     </div>
-                )}
-                <button onClick={() => setSidebarOpen(false)}>Close</button>
+                ))}
+                </div>
             </div>
         </div>
     );
 };
-export default Map;
+
+export default MapPage;
+
+
+
+

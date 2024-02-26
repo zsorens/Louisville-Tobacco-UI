@@ -4,6 +4,7 @@ import "../Styling/LoginPage.css"; // Import the CSS file
 
 const LoginPage = () => {
   return (
+    <div className="login-body">
     <div className="container d-flex justify-content-center align-items-center vh-100">
       <div className="card p-4" style={{ width: "50%" }}>
         {" "}
@@ -42,6 +43,7 @@ const LoginPage = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

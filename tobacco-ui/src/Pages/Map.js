@@ -66,8 +66,19 @@ function MapUpdater({ sidebarOpen }) {
 const mockAddresses = [
     { id: 1, name: "Mock Retailer 1", details: "score of 0", address: "1841 Alfresco Pl, Louisville, KY, 40205", color: 'red' },
     { id: 2, name: "Mock Retailer 2", details: "score of 1", address: "1641 Norris Pl, Louisville, KY, 40205", color: 'green' },
-    // Add more mock addresses here
+    { id: 3, name: "Mock Retailer 3", details: "score of 2", address: "470 E Brandeis Ave, Louisville KY, 40217", color: 'yellow' },
+    { id: 4, name: "Mock Retailer 4", details: "score of 3", address: "600 Ruggles Pl, Louisville, KY 40208", color: 'green' },
+    { id: 5, name: "Mock Retailer 5", details: "score of 4", address: "140 N Fourth St, Louisville, KY 40202", color: 'red' },
+    { id: 6, name: "Mock Retailer 6", details: "score of 5", address: "1 Arena Plaza, Louisville, KY 40202", color: 'yellow' },
+    { id: 7, name: "Mock Retailer 7", details: "score of 6", address: "3723 Lexington Rd, Louisville, KY 40207", color: 'green' },
+    { id: 8, name: "Mock Retailer 8", details: "score of 7", address: "5000 Shelbyville Rd, Louisville, KY 40207", color: 'red' },
+    { id: 9, name: "Mock Retailer 9", details: "score of 8", address: "2550 S Floyd St, Louisville, KY 40208", color: 'yellow' },
+    { id: 10, name: "Mock Retailer 10", details: "score of 9", address: "101 S 5th St, Louisville, KY 40202", color: 'green' },
+    { id: 11, name: "Mock Retailer 11", details: "score of 10", address: "3123 S 2nd St, Louisville, KY 40208", color: 'red' },
+    { id: 12, name: "Mock Retailer 12", details: "score of 11", address: "6622 Preston Hwy, Louisville, KY 40219", color: 'yellow' },
+    { id: 13, name: "Mock Retailer 13", details: "score of 12", address: "3408 Bardstown Rd, Louisville, KY 40218", color: 'green' },
 ];
+
 
 const MapPage = () => {
     const [locations, setLocations] = useState([]);

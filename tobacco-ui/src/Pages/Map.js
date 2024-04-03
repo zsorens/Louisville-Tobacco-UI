@@ -6,10 +6,11 @@ import "../Styling/Map.css";
 import redPin from '../Images/RedPin.webp';
 import yellowPin from '../Images/YellowPin.webp';
 import greenPin from '../Images/GreenPin.webp';
+import { readString } from 'react-papaparse'; // Importing CSV parser library
 
 const handleGeocodeFromPlaceId = async (placeId) => {
     try {
-        const apiKey = 'AIzaSyDZtW2qSDO2qdQvMEsc6tEvZWFuavhZC9s';
+        const apiKey = 'AIzaSyDZtW2qSDO2qdQvMEsc6tEvZWFuavhZC9s'; // Replace with your API key
         const response = await fetch(
             `https://maps.googleapis.com/maps/api/geocode/json?place_id=${encodeURIComponent(placeId)}&key=${apiKey}`
         );
@@ -24,9 +25,10 @@ const handleGeocodeFromPlaceId = async (placeId) => {
         console.error('Error fetching geocode:', error);
     }
 };
+
 const handleGeocode = async (address) => {
     try {
-        const apiKey = 'AIzaSyDZtW2qSDO2qdQvMEsc6tEvZWFuavhZC9s';
+        const apiKey = 'AIzaSyDZtW2qSDO2qdQvMEsc6tEvZWFuavhZC9s'; // Replace with your API key
         const response = await fetch(
             `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`
         );
@@ -45,6 +47,7 @@ const handleGeocode = async (address) => {
         console.error('Error fetching geocode:', error);
     }
 };
+
 const createCustomIcon = (color) => {
     let iconUrl;
     switch (color.toLowerCase()) {
@@ -81,39 +84,74 @@ function MapUpdater({ sidebarOpen }) {
     return null;
 }
 
-const mockAddresses = [
-    { id: 1, name: "Mock Retailer 1", details: "score of 0", address: "1841 Alfresco Pl, Louisville, KY, 40205", color: 'red' },
-    { id: 2, name: "Mock Retailer 2", details: "score of 1", address: "1641 Norris Pl, Louisville, KY, 40205", color: 'green' },
-    // Add more mock addresses here
-];
-
 const MapPage = () => {
     const [locations, setLocations] = useState([]);
     const [selectedRetailer, setSelectedRetailer] = useState(null);
-    const mockPlaceIds = ["ChIJF5LWpPJxaYgRclDhS0Rjkck", "ChIJadWcnSByaYgR0qkIQDEAsRc"];
+    const [csvData, setCSVData] = useState('');
 
     useEffect(() => {
-        const geocodeLocations = async () => {
-            const geocodedLocations = await Promise.all(
-                mockPlaceIds.map(async (placeId, index) => {
-                    const address = await handleGeocodeFromPlaceId(placeId);
-                    const coords = await handleGeocode(address);
-                    return coords ? {
-                        ...mockAddresses[index],
-                        address,
-                        position: [coords.lat, coords.lon]
-                    } : null;
-                })
-            );
-
-            setLocations(geocodedLocations.filter(loc => loc !== null));
+        const fetchCSVData = async () => {
+            try {
+                const response = await fetch('/test.csv'); // Replace with your CSV file path
+                const csvText = await response.text();
+                const lines = csvText.trim().split('\n');
+                const csvData = lines.slice(0).join('\n'); // Exclude the first line
+                setCSVData(csvData);
+            } catch (error) {
+                console.error('Error fetching CSV data:', error);
+            }
         };
-
-        geocodeLocations();
+    
+        fetchCSVData();
     }, []);
+
+    useEffect(() => {
+        if (csvData) {
+            readString(csvData, {
+                complete: function (results) {
+                    const placeData = results.data.slice(1); // Exclude header row
+                    const geocodeLocations = async () => {
+                        const geocodedLocations = await Promise.all(
+                            placeData.map(async (row, index) => {
+                                const placeId = row[0]; // Extract place ID from CSV
+                                const address = await handleGeocodeFromPlaceId(placeId);
+                                const coords = await handleGeocode(address);
+                                const flagText = parseInt(row[1]); // Extract flag text from CSV and parse as integer
+                                const flagImage = parseInt(row[2]); // Extract flag image from CSV and parse as integer
+                                const flagWebsite = parseInt(row[3]); // Extract flag website from CSV and parse as integer
+                                const flagCount = flagText + flagImage + flagWebsite; // Calculate total flag count
+                                const color = getColorFromFlags(flagCount); // Determine marker color based on flag count
+                                return coords ? {
+                                    id: index + 1,
+                                    address,
+                                    position: [coords.lat, coords.lon],
+                                    flag_count: flagCount, // Add flag count to location object
+                                    color
+                                } : null;
+                            })
+                        );
+
+                        setLocations(geocodedLocations.filter(loc => loc !== null));
+                    };
+
+                    geocodeLocations();
+                }
+            });
+        }
+    }, [csvData]);
 
     const handleMarkerClick = (retailer) => {
         setSelectedRetailer(retailer);
+    };
+
+    const getColorFromFlags = (flagCount) => {
+        if (flagCount >= 3) {
+            return 'red';
+        } else if (flagCount > 0) {
+            return 'yellow';
+        } else {
+            return 'green';
+        }
     };
 
     return (
@@ -131,7 +169,7 @@ const MapPage = () => {
                                     click: () => handleMarkerClick(location),
                                 }}
                             >
-                                <Popup>{location.name}</Popup>
+                                <Popup>{location.address}</Popup>
                             </Marker>
                         ))}
                         <MapUpdater />
@@ -140,24 +178,11 @@ const MapPage = () => {
                 <div className="sidebar-container">
                     {selectedRetailer && (
                         <div>
-                            <h2>{selectedRetailer.name}</h2>
+                            <h2>Retailer Information</h2>
                             <p>{selectedRetailer.address}</p>
-                            <p>{selectedRetailer.details}</p>
                             {/* Add more information here if needed */}
                         </div>
                     )}
-                </div>
-            </div>
-            <div className="mock-addresses-container d-flex justify-content-center w-100">
-                <div>
-                    <h2>Mock Addresses</h2>
-                    {locations.map((location) => (
-                        <div key={location.id}>
-                            <p>{location.name}</p>
-                            <p>{location.address}</p>
-                            {/* Add more information here if needed */}
-                        </div>
-                    ))}
                 </div>
             </div>
         </div>

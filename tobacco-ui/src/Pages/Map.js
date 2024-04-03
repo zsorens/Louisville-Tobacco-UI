@@ -19,11 +19,13 @@ const handleGeocodeFromPlaceId = async (placeId) => {
     const data = await response.json();
     if (data && data.results && data.results.length > 0) {
       const addressComponents = data.results[0].address_components;
-      const zipComponent = addressComponents.find(comp => comp.types.includes("postal_code"));
+      const zipComponent = addressComponents.find((comp) =>
+        comp.types.includes("postal_code")
+      );
       const zip = zipComponent ? zipComponent.long_name : "No ZIP";
       return {
         address: data.results[0].formatted_address,
-        zip
+        zip,
       };
     } else {
       console.error("No results found");
@@ -46,7 +48,7 @@ const handleGeocode = async (address) => {
     if (data && data.results && data.results.length > 0) {
       return {
         lat: data.results[0].geometry.location.lat,
-        lon: data.results[0].geometry.location.lng
+        lon: data.results[0].geometry.location.lng,
       };
     } else {
       console.error("No results found");
@@ -70,7 +72,7 @@ const createCustomIcon = (color) => {
       iconUrl = greenPin;
       break;
     default:
-      iconUrl = redPin;  // Default color is red as per your original setup
+      iconUrl = redPin; // Default color is red as per your original setup
   }
 
   return L.icon({
@@ -115,7 +117,8 @@ const MapPage = () => {
                 const geocodeResult = await handleGeocodeFromPlaceId(placeId);
                 if (geocodeResult) {
                   const coords = await handleGeocode(geocodeResult.address);
-                  const flagCount = parseInt(row[1]) + parseInt(row[2]) + parseInt(row[3]);
+                  const flagCount =
+                    parseInt(row[1]) + parseInt(row[2]) + parseInt(row[3]);
                   const color = getColorFromFlags(flagCount);
                   return {
                     id: index + 1,
@@ -130,7 +133,7 @@ const MapPage = () => {
               })
             );
 
-            setLocations(geocodedLocations.filter(loc => loc !== null));
+            setLocations(geocodedLocations.filter((loc) => loc !== null));
           };
 
           geocodeLocations();
@@ -156,20 +159,25 @@ const MapPage = () => {
   const exportCardsToCSV = () => {
     // Filter and sort locations by ZIP code
     const filteredAndSortedLocations = locations
-        .filter(loc => loc.zip.includes(zipFilter))
-        .sort((a, b) => a.zip.localeCompare(b.zip)); // Sorting by ZIP code
+      .filter((loc) => loc.zip.includes(zipFilter))
+      .sort((a, b) => a.zip.localeCompare(b.zip)); // Sorting by ZIP code
 
-    const csvContent = filteredAndSortedLocations.map(loc =>
-        `"${loc.address.replace(/"/g, '""')}",${loc.zip},${loc.flag_count},${loc.color}`
-    ).join("\n");
+    const csvContent = filteredAndSortedLocations
+      .map(
+        (loc) =>
+          `"${loc.address.replace(/"/g, '""')}",${loc.zip},${loc.flag_count},${
+            loc.color
+          }`
+      )
+      .join("\n");
 
     const csvHeader = "Address,ZIP,Flag Count,Color\n"; // Added ZIP in header
     const csvFile = csvHeader + csvContent;
 
-    const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvFile], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', 'retailers_info_sorted_by_zip.csv');
+    link.setAttribute("download", "retailers_info_sorted_by_zip.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -195,18 +203,20 @@ const MapPage = () => {
             style={{ height: "80vh" }}
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {locations.filter(location => location.zip.includes(zipFilter)).map((location) => (
-              <Marker
-                key={location.id}
-                position={location.position}
-                icon={createCustomIcon(location.color)}
-                eventHandlers={{
-                  click: () => handleMarkerClick(location),
-                }}
-              >
-                <Popup>{location.address}</Popup>
-              </Marker>
-            ))}
+            {locations
+              .filter((location) => location.zip.includes(zipFilter))
+              .map((location) => (
+                <Marker
+                  key={location.id}
+                  position={location.position}
+                  icon={createCustomIcon(location.color)}
+                  eventHandlers={{
+                    click: () => handleMarkerClick(location),
+                  }}
+                >
+                  <Popup>{location.address}</Popup>
+                </Marker>
+              ))}
           </MapContainer>
         </div>
         <div className="sidebar-container">
@@ -241,30 +251,29 @@ const MapPage = () => {
           >
             Filter
           </button>
-          <button
-            className="btn btn-success ml-2"
-            onClick={exportCardsToCSV}
-          >
+          <button className="btn btn-success ml-2" onClick={exportCardsToCSV}>
             Export CSV
           </button>
         </div>
         <hr className="my-4 hr-line" />
         <div className="container">
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3">
-            {locations.filter(location => location.zip.includes(zipFilter)).map((location) => (
-              <div className="col mb-4" key={location.id}>
-                <div
-                  className="card"
-                  style={{
-                    backgroundColor: getColorFromFlags(location.flag_count),
-                  }}
-                >
-                  <div className="card-body">
-                    <p className="card-text">{location.address}</p>
+            {locations
+              .filter((location) => location.zip.includes(zipFilter))
+              .map((location) => (
+                <div className="col mb-4" key={location.id}>
+                  <div
+                    className="card"
+                    style={{
+                      backgroundColor: getColorFromFlags(location.flag_count),
+                    }}
+                  >
+                    <div className="card-body">
+                      <p className="card-text">{location.address}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       </div>

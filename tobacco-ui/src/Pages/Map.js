@@ -7,17 +7,15 @@ import redPin from '../Images/RedPin.webp';
 import yellowPin from '../Images/YellowPin.webp';
 import greenPin from '../Images/GreenPin.webp';
 
-const handleGeocode = async (address) => {
+const handleGeocodeFromPlaceId = async (placeId) => {
     try {
+        const apiKey = 'AIzaSyDZtW2qSDO2qdQvMEsc6tEvZWFuavhZC9s';
         const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+            `https://maps.googleapis.com/maps/api/geocode/json?place_id=${encodeURIComponent(placeId)}&key=${apiKey}`
         );
         const data = await response.json();
-        if (data && data.length > 0) {
-            return {
-                lat: parseFloat(data[0].lat),
-                lon: parseFloat(data[0].lon)
-            }
+        if (data && data.results && data.results.length > 0) {
+            return data.results[0].formatted_address;
         } else {
             console.error('No results found');
             return null;
@@ -26,7 +24,27 @@ const handleGeocode = async (address) => {
         console.error('Error fetching geocode:', error);
     }
 };
-
+const handleGeocode = async (address) => {
+    try {
+        const apiKey = 'AIzaSyDZtW2qSDO2qdQvMEsc6tEvZWFuavhZC9s';
+        const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`
+        );
+        const data = await response.json();
+        if (data && data.results && data.results.length > 0) {
+            const location = data.results[0].geometry.location;
+            return {
+                lat: location.lat,
+                lon: location.lng
+            };
+        } else {
+            console.error('No results found');
+            return null;
+        }
+    } catch (error) {
+        console.error('Error fetching geocode:', error);
+    }
+};
 const createCustomIcon = (color) => {
     let iconUrl;
     switch (color.toLowerCase()) {
@@ -66,30 +84,25 @@ function MapUpdater({ sidebarOpen }) {
 const mockAddresses = [
     { id: 1, name: "Mock Retailer 1", details: "score of 0", address: "1841 Alfresco Pl, Louisville, KY, 40205", color: 'red' },
     { id: 2, name: "Mock Retailer 2", details: "score of 1", address: "1641 Norris Pl, Louisville, KY, 40205", color: 'green' },
-    { id: 3, name: "Mock Retailer 3", details: "score of 2", address: "470 E Brandeis Ave, Louisville KY, 40217", color: 'yellow' },
-    { id: 4, name: "Mock Retailer 4", details: "score of 3", address: "600 Ruggles Pl, Louisville, KY 40208", color: 'green' },
-    { id: 5, name: "Mock Retailer 5", details: "score of 4", address: "140 N Fourth St, Louisville, KY 40202", color: 'red' },
-    { id: 6, name: "Mock Retailer 6", details: "score of 5", address: "1 Arena Plaza, Louisville, KY 40202", color: 'yellow' },
-    { id: 7, name: "Mock Retailer 7", details: "score of 6", address: "3723 Lexington Rd, Louisville, KY 40207", color: 'green' },
-    { id: 8, name: "Mock Retailer 8", details: "score of 7", address: "5000 Shelbyville Rd, Louisville, KY 40207", color: 'red' },
-    { id: 9, name: "Mock Retailer 9", details: "score of 8", address: "2550 S Floyd St, Louisville, KY 40208", color: 'yellow' },
-    { id: 10, name: "Mock Retailer 10", details: "score of 9", address: "101 S 5th St, Louisville, KY 40202", color: 'green' },
-    { id: 11, name: "Mock Retailer 11", details: "score of 10", address: "3123 S 2nd St, Louisville, KY 40208", color: 'red' },
-    { id: 12, name: "Mock Retailer 12", details: "score of 11", address: "6622 Preston Hwy, Louisville, KY 40219", color: 'yellow' },
-    { id: 13, name: "Mock Retailer 13", details: "score of 12", address: "3408 Bardstown Rd, Louisville, KY 40218", color: 'green' },
+    // Add more mock addresses here
 ];
-
 
 const MapPage = () => {
     const [locations, setLocations] = useState([]);
     const [selectedRetailer, setSelectedRetailer] = useState(null);
+    const mockPlaceIds = ["ChIJF5LWpPJxaYgRclDhS0Rjkck", "ChIJadWcnSByaYgR0qkIQDEAsRc"];
 
     useEffect(() => {
         const geocodeLocations = async () => {
             const geocodedLocations = await Promise.all(
-                mockAddresses.map(async (location) => {
-                    const coords = await handleGeocode(location.address);
-                    return coords ? { ...location, position: [coords.lat, coords.lon] } : null;
+                mockPlaceIds.map(async (placeId, index) => {
+                    const address = await handleGeocodeFromPlaceId(placeId);
+                    const coords = await handleGeocode(address);
+                    return coords ? {
+                        ...mockAddresses[index],
+                        address,
+                        position: [coords.lat, coords.lon]
+                    } : null;
                 })
             );
 
@@ -137,14 +150,14 @@ const MapPage = () => {
             </div>
             <div className="mock-addresses-container d-flex justify-content-center w-100">
                 <div>
-                <h2>Mock Addresses</h2>
-                {locations.map((location) => (
-                    <div key={location.id}>
-                        <p>{location.name}</p>
-                        <p>{location.address}</p>
-                        {/* Add more information here if needed */}
-                    </div>
-                ))}
+                    <h2>Mock Addresses</h2>
+                    {locations.map((location) => (
+                        <div key={location.id}>
+                            <p>{location.name}</p>
+                            <p>{location.address}</p>
+                            {/* Add more information here if needed */}
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>
@@ -152,7 +165,3 @@ const MapPage = () => {
 };
 
 export default MapPage;
-
-
-
-

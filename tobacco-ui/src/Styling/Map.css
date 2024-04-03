@@ -1,0 +1,14 @@
+.map-page-container {
+    height: 500px;
+}
+
+.map-container {
+    width: 70%;
+}
+
+.sidebar-container {
+    width: 30%;
+    background-color: #f0f0f0;
+    padding: 20px;
+    box-sizing: border-box;
+}

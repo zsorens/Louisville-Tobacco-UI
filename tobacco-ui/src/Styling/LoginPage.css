@@ -1,4 +1,4 @@
-body {
+.login-body {
   background-image: url("../Images/Louisville_background.png"); /* Replace '../path/to/your/image.jpg' with the path to your image */
   background-size: cover;
   background-position: center;

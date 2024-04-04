@@ -1,14 +1,23 @@
 .map-page-container {
-    height: 500px;
+  height: 500px;
 }
 
 .map-container {
-    width: 70%;
+  width: 70%;
 }
 
 .sidebar-container {
-    width: 30%;
-    background-color: #f0f0f0;
-    padding: 20px;
-    box-sizing: border-box;
+  width: 30%;
+  background-color: #f0f0f0;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.hr-line {
+  border-top: 2px solid #343a40; /* Adjust thickness and color as needed */
+  margin-left: 10%;
+  margin-right: 10%;
+}
+.max-width-150px {
+  width: 150px;
 }

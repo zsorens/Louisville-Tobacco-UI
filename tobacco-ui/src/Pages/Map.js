@@ -65,7 +65,7 @@ const createCustomIcon = (color) => {
       iconUrl = greenPin;
       break;
     default:
-      iconUrl = redPin;
+      iconUrl = redPin;  // Default color is red as per your original setup
   }
 
   return L.icon({
@@ -160,6 +160,24 @@ const MapPage = () => {
     }
   };
 
+  // Function to download CSV
+  const exportCardsToCSV = () => {
+    const csvContent = locations.map(loc => 
+      `"${loc.address.replace(/"/g, '""')}",${loc.flag_count},${loc.color}`
+    ).join("\n");
+
+    const csvHeader = "Address,Flag Count,Color\n";
+    const csvFile = csvHeader + csvContent;
+
+    const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'retailers_info.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="map-page-container">
       <div className="map-sidebar-container d-flex flex-row">
@@ -214,6 +232,12 @@ const MapPage = () => {
             id="zip-filter-button"
           >
             Filter
+          </button>
+          <button
+            className="btn btn-success ml-2"
+            onClick={exportCardsToCSV}
+          >
+            Export CSV
           </button>
         </div>
         <hr className="my-4 hr-line" />

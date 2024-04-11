@@ -18,7 +18,13 @@ const handleGeocodeFromPlaceId = async (placeId) => {
     );
     const data = await response.json();
     if (data && data.results && data.results.length > 0) {
-      return data.results[0].formatted_address;
+      const addressComponents = data.results[0].address_components;
+      const zipComponent = addressComponents.find(comp => comp.types.includes("postal_code"));
+      const zip = zipComponent ? zipComponent.long_name : "No ZIP";
+      return {
+        address: data.results[0].formatted_address,
+        zip
+      };
     } else {
       console.error("No results found");
       return null;
@@ -38,10 +44,9 @@ const handleGeocode = async (address) => {
     );
     const data = await response.json();
     if (data && data.results && data.results.length > 0) {
-      const location = data.results[0].geometry.location;
       return {
-        lat: location.lat,
-        lon: location.lng,
+        lat: data.results[0].geometry.location.lat,
+        lon: data.results[0].geometry.location.lng
       };
     } else {
       console.error("No results found");
@@ -76,22 +81,11 @@ const createCustomIcon = (color) => {
   });
 };
 
-function MapUpdater({ sidebarOpen }) {
-  const map = useMap();
-
-  useEffect(() => {
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 300);
-  }, [sidebarOpen, map]);
-
-  return null;
-}
-
 const MapPage = () => {
   const [locations, setLocations] = useState([]);
   const [selectedRetailer, setSelectedRetailer] = useState(null);
   const [csvData, setCSVData] = useState("");
+  const [zipFilter, setZipFilter] = useState("");
 
   useEffect(() => {
     const fetchCSVData = async () => {
@@ -118,26 +112,25 @@ const MapPage = () => {
             const geocodedLocations = await Promise.all(
               placeData.map(async (row, index) => {
                 const placeId = row[0]; // Extract place ID from CSV
-                const address = await handleGeocodeFromPlaceId(placeId);
-                const coords = await handleGeocode(address);
-                const flagText = parseInt(row[1]); // Extract flag text from CSV and parse as integer
-                const flagImage = parseInt(row[2]); // Extract flag image from CSV and parse as integer
-                const flagWebsite = parseInt(row[3]); // Extract flag website from CSV and parse as integer
-                const flagCount = flagText + flagImage + flagWebsite; // Calculate total flag count
-                const color = getColorFromFlags(flagCount); // Determine marker color based on flag count
-                return coords
-                  ? {
-                      id: index + 1,
-                      address,
-                      position: [coords.lat, coords.lon],
-                      flag_count: flagCount, // Add flag count to location object
-                      color,
-                    }
-                  : null;
+                const geocodeResult = await handleGeocodeFromPlaceId(placeId);
+                if (geocodeResult) {
+                  const coords = await handleGeocode(geocodeResult.address);
+                  const flagCount = parseInt(row[1]) + parseInt(row[2]) + parseInt(row[3]);
+                  const color = getColorFromFlags(flagCount);
+                  return {
+                    id: index + 1,
+                    address: geocodeResult.address,
+                    zip: geocodeResult.zip,
+                    position: [coords.lat, coords.lon],
+                    flag_count: flagCount,
+                    color,
+                  };
+                }
+                return null;
               })
             );
 
-            setLocations(geocodedLocations.filter((loc) => loc !== null));
+            setLocations(geocodedLocations.filter(loc => loc !== null));
           };
 
           geocodeLocations();
@@ -160,22 +153,35 @@ const MapPage = () => {
     }
   };
 
-  // Function to download CSV
   const exportCardsToCSV = () => {
-    const csvContent = locations.map(loc => 
-      `"${loc.address.replace(/"/g, '""')}",${loc.flag_count},${loc.color}`
+    // Filter and sort locations by ZIP code
+    const filteredAndSortedLocations = locations
+        .filter(loc => loc.zip.includes(zipFilter))
+        .sort((a, b) => a.zip.localeCompare(b.zip)); // Sorting by ZIP code
+
+    const csvContent = filteredAndSortedLocations.map(loc =>
+        `"${loc.address.replace(/"/g, '""')}",${loc.zip},${loc.flag_count},${loc.color}`
     ).join("\n");
 
-    const csvHeader = "Address,Flag Count,Color\n";
+    const csvHeader = "Address,ZIP,Flag Count,Color\n"; // Added ZIP in header
     const csvFile = csvHeader + csvContent;
 
     const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', 'retailers_info.csv');
+    link.setAttribute('download', 'retailers_info_sorted_by_zip.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleZipFilterChange = (event) => {
+    setZipFilter(event.target.value);
+  };
+
+  const applyZipFilter = () => {
+    // This function could be enhanced to trigger re-fetching data or filtering existing data
+    // For now, we're setting the ZIP and assuming the locations are already loaded and filtered upon render
   };
 
   return (
@@ -189,7 +195,7 @@ const MapPage = () => {
             style={{ height: "80vh" }}
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {locations.map((location) => (
+            {locations.filter(location => location.zip.includes(zipFilter)).map((location) => (
               <Marker
                 key={location.id}
                 position={location.position}
@@ -201,7 +207,6 @@ const MapPage = () => {
                 <Popup>{location.address}</Popup>
               </Marker>
             ))}
-            <MapUpdater />
           </MapContainer>
         </div>
         <div className="sidebar-container">
@@ -218,18 +223,21 @@ const MapPage = () => {
         <div className="d-flex justify-content-center pt-4 pb-2">
           <h3>Retailers Info</h3>
         </div>
-        <div className="d-flex justify-content-center mb-3 ">
+        <div className="d-flex justify-content-center mb-3">
           <input
             type="text"
             className="form-control max-width-150px"
             placeholder="Enter ZIP code..."
             aria-label="Enter ZIP code"
             aria-describedby="zip-filter-button"
+            value={zipFilter}
+            onChange={handleZipFilterChange}
           />
           <button
             className="btn btn-primary"
             type="button"
             id="zip-filter-button"
+            onClick={applyZipFilter}
           >
             Filter
           </button>
@@ -243,7 +251,7 @@ const MapPage = () => {
         <hr className="my-4 hr-line" />
         <div className="container">
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3">
-            {locations.map((location) => (
+            {locations.filter(location => location.zip.includes(zipFilter)).map((location) => (
               <div className="col mb-4" key={location.id}>
                 <div
                   className="card"

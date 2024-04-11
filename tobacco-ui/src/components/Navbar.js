@@ -13,14 +13,6 @@ const NavBar = () => {
           src={logo}
           alt="the logo for department of public health and wellness"
         />
-
-        <ul className="navbar-nav ml-auto">
-          <li className="nav-item">
-            <Link className="nav-link" to="/map">
-              Map
-            </Link>
-          </li>
-        </ul>
       </div>
     </nav>
   );

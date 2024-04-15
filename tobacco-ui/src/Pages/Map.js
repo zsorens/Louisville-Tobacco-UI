@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "../Styling/Map.css";
@@ -8,9 +8,9 @@ import yellowPin from "../Images/YellowPin.webp";
 import greenPin from "../Images/GreenPin.webp";
 import { readString } from "react-papaparse"; // Importing CSV parser library
 
-const handleGeocodeFromPlaceId = async (placeId) => {
+const getAddressFromPlaceId = async (placeId) => {
   try {
-    const apiKey = "AIzaSyCUf0oKnKTVIuIaGQ99igN4MhwLOTJboUc"; // Replace with your API key
+    const apiKey = "AIzaSyCUf0oKnKTVIuIaGQ99igN4MhwLOTJboUc"; // Replace with your Google Maps API key
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?place_id=${encodeURIComponent(
         placeId
@@ -18,27 +18,20 @@ const handleGeocodeFromPlaceId = async (placeId) => {
     );
     const data = await response.json();
     if (data && data.results && data.results.length > 0) {
-      const addressComponents = data.results[0].address_components;
-      const zipComponent = addressComponents.find((comp) =>
-        comp.types.includes("postal_code")
-      );
-      const zip = zipComponent ? zipComponent.long_name : "No ZIP";
-      return {
-        address: data.results[0].formatted_address,
-        zip,
-      };
+      return data.results[0].formatted_address;
     } else {
       console.error("No results found");
       return null;
     }
   } catch (error) {
     console.error("Error fetching geocode:", error);
+    return null;
   }
 };
 
 const handleGeocode = async (address) => {
   try {
-    const apiKey = "AIzaSyCUf0oKnKTVIuIaGQ99igN4MhwLOTJboUc"; // Replace with your API key
+    const apiKey = "AIzaSyCUf0oKnKTVIuIaGQ99igN4MhwLOTJboUc"; // Replace with your Google Maps API key
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
         address
@@ -56,6 +49,7 @@ const handleGeocode = async (address) => {
     }
   } catch (error) {
     console.error("Error fetching geocode:", error);
+    return null;
   }
 };
 
@@ -114,20 +108,32 @@ const MapPage = () => {
             const geocodedLocations = await Promise.all(
               placeData.map(async (row, index) => {
                 const placeId = row[0]; // Extract place ID from CSV
-                const geocodeResult = await handleGeocodeFromPlaceId(placeId);
+                const address = await getAddressFromPlaceId(placeId); // Corrected function call
+                const geocodeResult = await handleGeocode(address); // Corrected function call
                 if (geocodeResult) {
-                  const coords = await handleGeocode(geocodeResult.address);
-                  const flagCount =
-                    parseInt(row[1]) + parseInt(row[2]) + parseInt(row[3]);
-                  const color = getColorFromFlags(flagCount);
-                  return {
-                    id: index + 1,
-                    address: geocodeResult.address,
-                    zip: geocodeResult.zip,
-                    position: [coords.lat, coords.lon],
-                    flag_count: flagCount,
-                    color,
-                  };
+                  // Check if the address exists in CSV 1
+                  const matchingLocation = locations.find(
+                    (loc) => loc.address === address
+                  );
+                  if (matchingLocation) {
+                    // Check status in CSV 1 and set marker color accordingly
+                    const color =
+                      matchingLocation.status === "Active" ? "green" : "red";
+                    return {
+                      id: index + 1,
+                      address: geocodeResult.address,
+                      position: [geocodeResult.lat, geocodeResult.lon],
+                      color,
+                    };
+                  } else {
+                    // No matching address found in CSV 1, set marker color to yellow
+                    return {
+                      id: index + 1,
+                      address: geocodeResult.address,
+                      position: [geocodeResult.lat, geocodeResult.lon],
+                      color: "yellow",
+                    };
+                  }
                 }
                 return null;
               })
@@ -140,44 +146,29 @@ const MapPage = () => {
         },
       });
     }
-  }, [csvData]);
+  }, [csvData, locations]);
 
   const handleMarkerClick = (retailer) => {
     setSelectedRetailer(retailer);
   };
 
-  const getColorFromFlags = (flagCount) => {
-    if (flagCount >= 3) {
-      return "red";
-    } else if (flagCount > 0) {
-      return "yellow";
-    } else {
-      return "green";
-    }
-  };
-
   const exportCardsToCSV = () => {
     // Filter and sort locations by ZIP code
     const filteredAndSortedLocations = locations
-      .filter((loc) => loc.zip.includes(zipFilter))
-      .sort((a, b) => a.zip.localeCompare(b.zip)); // Sorting by ZIP code
+      .filter((loc) => loc.address.includes(zipFilter))
+      .sort((a, b) => a.address.localeCompare(b.address)); // Sorting by address
 
     const csvContent = filteredAndSortedLocations
-      .map(
-        (loc) =>
-          `"${loc.address.replace(/"/g, '""')}",${loc.zip},${loc.flag_count},${
-            loc.color
-          }`
-      )
+      .map((loc) => `"${loc.address.replace(/"/g, '""')}",${loc.color}`)
       .join("\n");
 
-    const csvHeader = "Address,ZIP,Flag Count,Color\n"; // Added ZIP in header
+    const csvHeader = "Address,Color\n"; // Removed ZIP from header
     const csvFile = csvHeader + csvContent;
 
     const blob = new Blob([csvFile], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", "retailers_info_sorted_by_zip.csv");
+    link.setAttribute("download", "retailers_info_sorted_by_address.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -204,7 +195,7 @@ const MapPage = () => {
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {locations
-              .filter((location) => location.zip.includes(zipFilter))
+              .filter((location) => location.address.includes(zipFilter))
               .map((location) => (
                 <Marker
                   key={location.id}
@@ -237,16 +228,16 @@ const MapPage = () => {
           <input
             type="text"
             className="form-control max-width-150px"
-            placeholder="Enter ZIP code..."
-            aria-label="Enter ZIP code"
-            aria-describedby="zip-filter-button"
+            placeholder="Enter address..."
+            aria-label="Enter address"
+            aria-describedby="address-filter-button"
             value={zipFilter}
             onChange={handleZipFilterChange}
           />
           <button
             className="btn btn-primary"
             type="button"
-            id="zip-filter-button"
+            id="address-filter-button"
             onClick={applyZipFilter}
           >
             Filter
@@ -259,13 +250,13 @@ const MapPage = () => {
         <div className="container">
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3">
             {locations
-              .filter((location) => location.zip.includes(zipFilter))
+              .filter((location) => location.address.includes(zipFilter))
               .map((location) => (
                 <div className="col mb-4" key={location.id}>
                   <div
                     className="card"
                     style={{
-                      backgroundColor: getColorFromFlags(location.flag_count),
+                      backgroundColor: location.color,
                     }}
                   >
                     <div className="card-body">

@@ -2,10 +2,6 @@ import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import "../Styling/Map.css";
 import redPin from "../Images/RedPin.webp";
 import yellowPin from "../Images/YellowPin.webp";
@@ -79,12 +75,6 @@ const createCustomIcon = (color) => {
       iconUrl = redPin; // Default color is red as per your original setup
   }
 
-  return L.icon({
-    iconUrl: iconUrl,
-    iconSize: [50, 50],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40],
-  });
   return L.icon({
     iconUrl: iconUrl,
     iconSize: [50, 50],

@@ -10,7 +10,7 @@ import { readString } from "react-papaparse"; // Importing CSV parser library
 
 const handleGeocodeFromPlaceId = async (placeId) => {
   try {
-    const apiKey = "AIzaSyCUf0oKnKTVIuIaGQ99igN4MhwLOTJboUc"; // Replace with your API key
+    const apiKey = "AIzaSyCUf0oKnKTVIuIaGQ99igN4MhwLOTJboUc"; // Replace with your actual API key
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?place_id=${encodeURIComponent(
         placeId
@@ -21,9 +21,13 @@ const handleGeocodeFromPlaceId = async (placeId) => {
       const addressComponents = data.results[0].address_components;
       const zipComponent = addressComponents.find(comp => comp.types.includes("postal_code"));
       const zip = zipComponent ? zipComponent.long_name : "No ZIP";
+      // Attempt to find a component that might represent the name (like route or premise)
+      const nameComponent = addressComponents.find(comp => comp.types.includes("route") || comp.types.includes("premise"));
+      const name = nameComponent ? nameComponent.long_name : "No specific name found";
       return {
         address: data.results[0].formatted_address,
-        zip
+        zip,
+        name
       };
     } else {
       console.error("No results found");
@@ -36,17 +40,22 @@ const handleGeocodeFromPlaceId = async (placeId) => {
 
 const handleGeocode = async (address) => {
   try {
-    const apiKey = "AIzaSyCUf0oKnKTVIuIaGQ99igN4MhwLOTJboUc"; // Replace with your API key
+    const apiKey = "AIzaSyCUf0oKnKTVIuIaGQ99igN4MhwLOTJboUc"; // Replace with your actual API key
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
         address
       )}&key=${apiKey}`
     );
+    console.log(response);
     const data = await response.json();
     if (data && data.results && data.results.length > 0) {
+      // Attempt to find a component that might represent the name (like route or premise)
+      const nameComponent = data.results[0].address_components.find(comp => comp.types.includes("route") || comp.types.includes("premise"));
+      const name = nameComponent ? nameComponent.long_name : "No specific name found";
       return {
         lat: data.results[0].geometry.location.lat,
-        lon: data.results[0].geometry.location.lng
+        lon: data.results[0].geometry.location.lng,
+        name
       };
     } else {
       console.error("No results found");
@@ -56,6 +65,7 @@ const handleGeocode = async (address) => {
     console.error("Error fetching geocode:", error);
   }
 };
+
 
 const createCustomIcon = (color) => {
   let iconUrl;
@@ -117,6 +127,7 @@ const MapPage = () => {
                   const coords = await handleGeocode(geocodeResult.address);
                   const flagCount = parseInt(row[1]) + parseInt(row[2]) + parseInt(row[3]);
                   const color = getColorFromFlags(flagCount);
+                  console.log(geocodeResult);
                   return {
                     id: index + 1,
                     address: geocodeResult.address,
@@ -213,7 +224,8 @@ const MapPage = () => {
           {selectedRetailer && (
             <div>
               <h2>Retailer Information</h2>
-              <p>{selectedRetailer.address}</p>
+              <h4>{selectedRetailer.address}</h4>
+              <p className="text-uppercase">Grade: {selectedRetailer.color}</p>
               {/* Add more information here if needed */}
             </div>
           )}
@@ -234,15 +246,7 @@ const MapPage = () => {
             onChange={handleZipFilterChange}
           />
           <button
-            className="btn btn-primary"
-            type="button"
-            id="zip-filter-button"
-            onClick={applyZipFilter}
-          >
-            Filter
-          </button>
-          <button
-            className="btn btn-success ml-2"
+            className="btn btn-primary ms-2 ml-2"
             onClick={exportCardsToCSV}
           >
             Export CSV
